@@ -1,16 +1,16 @@
 {
   "files": {
     "main.css": "/lor1113/Ashburnham/static/css/main.073c9b0a.css",
-    "main.js": "/lor1113/Ashburnham/static/js/main.dc8dd540.js",
+    "main.js": "/lor1113/Ashburnham/static/js/main.8c430bdc.js",
     "static/js/787.1ed0c42c.chunk.js": "/lor1113/Ashburnham/static/js/787.1ed0c42c.chunk.js",
     "static/media/logo.svg": "/lor1113/Ashburnham/static/media/logo.6ce24c58023cc2f8fd88fe9d219db6c6.svg",
     "index.html": "/lor1113/Ashburnham/index.html",
     "main.073c9b0a.css.map": "/lor1113/Ashburnham/static/css/main.073c9b0a.css.map",
-    "main.dc8dd540.js.map": "/lor1113/Ashburnham/static/js/main.dc8dd540.js.map",
+    "main.8c430bdc.js.map": "/lor1113/Ashburnham/static/js/main.8c430bdc.js.map",
     "787.1ed0c42c.chunk.js.map": "/lor1113/Ashburnham/static/js/787.1ed0c42c.chunk.js.map"
   },
   "entrypoints": [
     "static/css/main.073c9b0a.css",
-    "static/js/main.dc8dd540.js"
+    "static/js/main.8c430bdc.js"
   ]
 }
