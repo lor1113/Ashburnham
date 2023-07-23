@@ -1,24 +1,31 @@
-import logo from './logo.svg';
-import './App.css';
+import styled from 'styled-components'
+import main_background from './img/main_background.png'
+import DeskImage from './DeskImage'
+import book_hover from './img/book_hover.png'
+import book from './img/book.png'
+
+const MainBG = styled.div`
+  background-image: url(${main_background});
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
+  width: 100vw;
+  height: 100vh;
+`
+
+const testParams = {
+  'img1': book,
+  'img2': book_hover,
+  'height': "20vh",
+  'top': "5vh",
+  'left': "5vw"
+}
+
 
 function App() {
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Under construction. Spinny atom go wheee.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Git Gud
-        </a>
-      </header>
-    </div>
+    <MainBG>
+      <DeskImage bundle={testParams}/>
+    </MainBG>
   );
 }
 
