@@ -18,15 +18,23 @@ const parentDirectories = {
   "projects":"~"
 }
 
+const subFiles = {
+  "~":["CV.txt","Biography.txt"],
+  "projects":[],
+  "Astrodigos":["Astro.txt"]
+}
+
 const commandFailString = "zsh: command not found: "
 const cdFailString = "cd: not a directory: "
 
 function App() {
   let terminalTextArray = startingText
+  const baseChildren = subDirectories["~"].concat(subFiles["~"])
 
   const [terminalText, setTerminalText] = useState(terminalTextArray)
   const [workingDirectory, setWorkingDirectory] = useState("~")
   const [childDirectories, setChildDirectories] = useState(subDirectories["~"])
+  const [childItems, setChildItems] = useState(baseChildren)
 
   const textDivs = terminalText.map(x => <TextDiv text={x}/>)
 
@@ -51,16 +59,21 @@ function App() {
       currentArgs = ""
     } else {
       currentCommand = textCommand.slice(0,commandSeparator)
-      currentArgs = textCommand.slice(commandSeparator + 1)
+      currentArgs = textCommand.slice(commandSeparator + 1).trim()
     }
     if (currentCommand === "cd"){
       if (currentArgs === ""){} else if (currentArgs === ".."){
         const newDirectory = parentDirectories[workingDirectory]
-        setWorkingDirectory(newDirectory)
+        const newChildren = subDirectories[newDirectory].concat(subFiles[newDirectory])
+        setChildItems(newChildren)
         setChildDirectories(subDirectories[newDirectory])
+        setWorkingDirectory(newDirectory)
       }else if (childDirectories.includes(currentArgs)) {
-        setWorkingDirectory(currentArgs)
+        const newChildren = subDirectories[currentArgs].concat(subFiles[currentArgs])
+        setChildItems(newChildren)
         setChildDirectories(subDirectories[currentArgs])
+        setWorkingDirectory(currentArgs)
+        console.log(childItems)
       } else {
         const outString = cdFailString + currentArgs
         AddText(outString)
@@ -74,7 +87,7 @@ function App() {
   return (
     <div className="mainWrapper">
       {textDivs}
-      <TextInput workingDirectory={workingDirectory} childDirectories={childDirectories} executeCommand={executeCommand}/>
+      <TextInput workingDirectory={workingDirectory} childItems={childItems} executeCommand={executeCommand}/>
     </div>
   );
 }

@@ -1,5 +1,5 @@
 import styled from 'styled-components'
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 
 const validCommands = ["ls","cd","open","sudo","nano","vi","rm"]
 
@@ -19,6 +19,8 @@ const TerminalCursor = styled.span`
 `
 
 const stringMatcher = (inputString,toMatch) => {
+    console.log(inputString)
+    console.log(toMatch)
     inputString = inputString.toLowerCase()
     const stringLength = inputString.length
     const output = toMatch.find(x => x.slice(0,stringLength).toLowerCase() === inputString)
@@ -26,9 +28,8 @@ const stringMatcher = (inputString,toMatch) => {
 }
 
 
-const TextInput = ({workingDirectory,childDirectories,executeCommand}) => {
+const TextInput = ({workingDirectory,childItems,executeCommand}) => {
     const baseText = "lorenzocurcio " + workingDirectory + " > "
-    const noDeleteLength = baseText.length
 
     let inputSlice1 = ""
     let inputSlice2 = ""
@@ -39,10 +40,8 @@ const TextInput = ({workingDirectory,childDirectories,executeCommand}) => {
     const [textSlice1, setTextSlice1] = useState("");
     const [textSlice2, setTextSlice2] = useState("");
     const [textCursor, setTextCursor] = useState("\u00A0")
-    const listener = useRef(false)
-    
+
     const handleKeyDown = (event) => {
-        console.log(fullText)
         let isPrintableKey = event.key.length === 1 || event.key === 'Unidentified';
         if (isPrintableKey) {
             fullText = inputSlice1 + event.key + cursorChar + inputSlice2
@@ -76,7 +75,7 @@ const TextInput = ({workingDirectory,childDirectories,executeCommand}) => {
                     const currentCommand = fullText.slice(0,commandSeparator)
                     const currentArgs = fullText.slice(commandSeparator + 1)
                     if (currentArgs.length > 0){   
-                        const match = stringMatcher(currentArgs,childDirectories)
+                        const match = stringMatcher(currentArgs,childItems)
                         if (match) {
                             fullText = currentCommand + " " + match
                             cursorPos = 0
@@ -109,10 +108,11 @@ const TextInput = ({workingDirectory,childDirectories,executeCommand}) => {
     }
 
     useEffect(() => {
-        if (listener.current === false) {
-            document.addEventListener("keydown",handleKeyDown)
-            listener.current = true
-        }
+
+        document.addEventListener("keydown",handleKeyDown)
+        return () => {
+            document.removeEventListener("keydown",handleKeyDown)
+          };
     },[])
 
 
