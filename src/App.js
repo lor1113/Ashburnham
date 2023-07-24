@@ -10,12 +10,14 @@ const startingText = [
 
 const subDirectories = {
   "~":["projects","work_experience","education"],
-  "projects":["Astrodigos"]
+  "projects":["Astrodigos"],
+  "Astrodigos":[]
 }
 
 const parentDirectories = {
   "~":"~",
-  "projects":"~"
+  "projects":"~",
+  "Astrodigos":"projects"
 }
 
 const subFiles = {
@@ -41,7 +43,7 @@ function App() {
   const AddText = (newString) => {
     terminalTextArray.push(newString)
     if (terminalTextArray.length > 40) {
-      terminalTextArray = terminalTextArray.slice(-25)
+      terminalTextArray = terminalTextArray.slice(-40)
     }
     setTerminalText([...terminalTextArray])
   }
@@ -68,12 +70,11 @@ function App() {
         setChildItems(newChildren)
         setChildDirectories(subDirectories[newDirectory])
         setWorkingDirectory(newDirectory)
-      }else if (childDirectories.includes(currentArgs)) {
+      } else if (childDirectories.includes(currentArgs)) {
         const newChildren = subDirectories[currentArgs].concat(subFiles[currentArgs])
         setChildItems(newChildren)
         setChildDirectories(subDirectories[currentArgs])
         setWorkingDirectory(currentArgs)
-        console.log(childItems)
       } else {
         const outString = cdFailString + currentArgs
         AddText(outString)

@@ -1,5 +1,5 @@
 import styled from 'styled-components'
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 
 const validCommands = ["ls","cd","open","sudo","nano","vi","rm"]
 
@@ -19,8 +19,6 @@ const TerminalCursor = styled.span`
 `
 
 const stringMatcher = (inputString,toMatch) => {
-    console.log(inputString)
-    console.log(toMatch)
     inputString = inputString.toLowerCase()
     const stringLength = inputString.length
     const output = toMatch.find(x => x.slice(0,stringLength).toLowerCase() === inputString)
@@ -31,31 +29,53 @@ const stringMatcher = (inputString,toMatch) => {
 const TextInput = ({workingDirectory,childItems,executeCommand}) => {
     const baseText = "lorenzocurcio " + workingDirectory + " > "
 
+    const [textSlice1, setTextSlice1] = useState("");
+    const [textSlice2, setTextSlice2] = useState("");
+    const [cursorText, setCursorText] = useState("\u00A0")
+
     let inputSlice1 = ""
     let inputSlice2 = ""
     let cursorChar = ""
     let cursorPos = 0
     let fullText = ""
 
-    const [textSlice1, setTextSlice1] = useState("");
-    const [textSlice2, setTextSlice2] = useState("");
-    const [textCursor, setTextCursor] = useState("\u00A0")
+    const setTextContent = (text) => {
+        fullText = text
+        if (cursorPos === 0) {
+            inputSlice1 = text
+            inputSlice2 = ""
+            cursorChar = ""
+            setTextSlice1(inputSlice1)
+            setTextSlice2("")
+            setCursorText("\u00A0")
+        } else {
+            const cursorIndex = cursorPos + text.length
+            cursorChar = text[cursorIndex]
+            inputSlice1 = text.slice(0,cursorIndex)
+            inputSlice2 = text.slice(cursorIndex + 1)
+            setCursorText(cursorChar)
+            setTextSlice1(inputSlice1)
+            setTextSlice2(inputSlice2)
+        }
+        
+    }
 
-    const handleKeyDown = (event) => {
+    const handleKeyDown = useCallback((event) => {
+        let newText = ""
         let isPrintableKey = event.key.length === 1 || event.key === 'Unidentified';
         if (isPrintableKey) {
-            fullText = inputSlice1 + event.key + cursorChar + inputSlice2
-            setTextContent(fullText)
+            newText = inputSlice1 + event.key + cursorChar + inputSlice2
+            setTextContent(newText)
         } else if (event.keyCode === 8 || event.keyCode === 46) {
             if (fullText.length > 0){
-                fullText = inputSlice1.slice(0,-1) + cursorChar + inputSlice2
-                setTextContent(fullText)
+                newText = inputSlice1.slice(0,-1) + cursorChar + inputSlice2
+                setTextContent(newText)
             }
         } else if (event.keyCode === 13){
             if (fullText.length > 0){
                 cursorPos = 0
-                setTextContent("")
                 executeCommand(fullText)
+                setTextContent("")                
             }
         } else if (event.keyCode === 37) {
             if ((cursorPos + fullText.length) > 0) {
@@ -74,50 +94,31 @@ const TextInput = ({workingDirectory,childItems,executeCommand}) => {
                     const commandSeparator = fullText.indexOf(" ")
                     const currentCommand = fullText.slice(0,commandSeparator)
                     const currentArgs = fullText.slice(commandSeparator + 1)
-                    if (currentArgs.length > 0){   
+                    if (currentArgs.length > 0){
                         const match = stringMatcher(currentArgs,childItems)
                         if (match) {
-                            fullText = currentCommand + " " + match
+                            newText = currentCommand + " " + match
                             cursorPos = 0
-                            setTextContent(fullText)
+                            setTextContent(newText)
                         }
                     }
                 }
             }
         }
-    }
-
-    const setTextContent = (text) => {
-        if (cursorPos === 0) {
-            inputSlice1 = text
-            inputSlice2 = ""
-            cursorChar = ""
-            setTextSlice1(inputSlice1)
-            setTextSlice2("")
-            setTextCursor("\u00A0")
-        } else {
-            const cursorIndex = cursorPos + text.length
-            cursorChar = text[cursorIndex]
-            inputSlice1 = text.slice(0,cursorIndex)
-            inputSlice2 = text.slice(cursorIndex + 1)
-            setTextCursor(cursorChar)
-            setTextSlice1(inputSlice1)
-            setTextSlice2(inputSlice2)
-        }
-        
-    }
+    }, [childItems])
 
     useEffect(() => {
-
+        console.log("added listener")
         document.addEventListener("keydown",handleKeyDown)
         return () => {
+            console.log("removed listener")
             document.removeEventListener("keydown",handleKeyDown)
           };
-    },[])
+    },[handleKeyDown])
 
 
     return(
-        <TerminalDiv>{baseText}{textSlice1}<TerminalCursor>{textCursor}</TerminalCursor>{textSlice2}</TerminalDiv>
+        <TerminalDiv>{baseText}{textSlice1}<TerminalCursor>{cursorText}</TerminalCursor>{textSlice2}</TerminalDiv>
     )
 }
 
