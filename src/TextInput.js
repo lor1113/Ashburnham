@@ -1,7 +1,5 @@
 import styled from 'styled-components'
-import React, { useState, useEffect, useCallback } from 'react';
-
-const validCommands = ["ls","cd","open","sudo","nano","vi","rm"]
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 
 const TerminalDiv = styled.div`
     width:90%;
@@ -25,13 +23,19 @@ const stringMatcher = (inputString,toMatch) => {
     return output
 }
 
+function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
 
-const TextInput = ({workingDirectory,childItems,executeCommand}) => {
+
+const TextInput = ({workingDirectory,childItems,executeCommand,autoCommand}) => {
     const baseText = "lorenzocurcio " + workingDirectory + " > "
 
     const [textSlice1, setTextSlice1] = useState("");
     const [textSlice2, setTextSlice2] = useState("");
     const [cursorText, setCursorText] = useState("\u00A0")
+
+    const autoRef = useRef(true)
 
     let inputSlice1 = ""
     let inputSlice2 = ""
@@ -57,7 +61,7 @@ const TextInput = ({workingDirectory,childItems,executeCommand}) => {
             setTextSlice1(inputSlice1)
             setTextSlice2(inputSlice2)
         }
-        
+        document.body.scrollTo(0,document.body.scrollHeight)
     }
 
     const handleKeyDown = useCallback((event) => {
@@ -104,7 +108,7 @@ const TextInput = ({workingDirectory,childItems,executeCommand}) => {
                     }
                 }
             }
-        }
+        }   
     }, [childItems])
 
     useEffect(() => {
@@ -115,6 +119,41 @@ const TextInput = ({workingDirectory,childItems,executeCommand}) => {
             document.removeEventListener("keydown",handleKeyDown)
           };
     },[handleKeyDown])
+
+    useEffect(() => {
+        async function runAutoCommand(autoCommand) {
+            if (autoCommand) {
+                console.log("running auto command")
+                document.addEventListener("keydown",inputDestroyer,true)
+                cursorPos = 0
+                setTextContent("")
+                await sleep(200)
+                for (let x = 0; x < autoCommand.length; x++) {
+                    const newText = fullText + autoCommand[x]
+                    setTextContent(newText)
+                    await sleep(200)
+                }
+                await sleep(300)
+                executeCommand(fullText)
+                setTextContent("")         
+                document.removeEventListener("keydown",inputDestroyer,true)
+            }
+            autoRef.current = true
+        }
+
+        const inputDestroyer = (event) => {
+            event.preventDefault()
+            event.stopPropagation()
+        }
+
+        if (autoRef.current === true){
+            autoRef.current = false
+            runAutoCommand(autoCommand)
+        }
+        
+    },[autoCommand])
+
+
 
 
     return(

@@ -2,11 +2,9 @@ import './App.css';
 import React, { useState, useEffect } from 'react';
 import TextDiv from './TextDiv';
 import TextInput from './TextInput';
+import MultiTextDiv from './MultiTextDiv';
 
-const startingText = [
-  "The quick brown fox jumps aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa over the lazy dog",
-  "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb lol"
-]
+const startingText = []
 
 const subDirectories = {
   "~":["projects","work_experience","education"],
@@ -29,24 +27,61 @@ const subFiles = {
 const commandFailString = "zsh: command not found: "
 const cdFailString = "cd: not a directory: "
 
+const validCommands = ["ls","cd","open","sudo","nano","vi","rm"]
+
+const commandHelp = [
+  "Standard commands:",
+  "ls: Lists all files and directories within the current directory.",
+  "cd: Change directory. Use '..' to enter the parent directory.",
+  "open: Opens a file.",
+  "clear: clears the terminal window",
+  "contact: Displays contact information."
+]
+
+let listCounter = 0
+
 function App() {
   let terminalTextArray = startingText
+
   const baseChildren = subDirectories["~"].concat(subFiles["~"])
 
   const [terminalText, setTerminalText] = useState(terminalTextArray)
   const [workingDirectory, setWorkingDirectory] = useState("~")
   const [childDirectories, setChildDirectories] = useState(subDirectories["~"])
   const [childItems, setChildItems] = useState(baseChildren)
+  const [autoCommand, setAutoCommand] = useState("help")
 
-  const textDivs = terminalText.map(x => <TextDiv text={x}/>)
-
-  const AddText = (newString) => {
-    terminalTextArray.push(newString)
-    if (terminalTextArray.length > 40) {
-      terminalTextArray = terminalTextArray.slice(-40)
+  const textDivs = terminalText.map(x => {
+    if (Array.isArray(x[1])){
+      return <MultiTextDiv key={x[0]} text={x[1]}/>
+    } else {
+      return <TextDiv key={x[0]} text={x[1]}/>
     }
+  })
+
+  const AddText = (textInput,multi=false) => {
+    let newStringArray = []
+    if (Array.isArray(textInput) && (!multi)){
+      newStringArray = textInput
+    } else {
+      newStringArray = [textInput]
+    }
+    newStringArray.forEach(newString => {
+      listCounter += 1
+      if (listCounter > 1000000){
+        listCounter = 0
+      }
+      terminalTextArray.push([listCounter,newString])
+      if (terminalTextArray.length > 40) {
+        terminalTextArray = terminalTextArray.slice(-40)
+      }
+    })
     setTerminalText([...terminalTextArray])
   }
+
+  useEffect(() => {
+    document.body.scrollTo(0,document.body.scrollHeight)
+  },[terminalText])
   
   const executeCommand = (textCommand) => {
     AddText("> " + textCommand)
@@ -79,6 +114,10 @@ function App() {
         const outString = cdFailString + currentArgs
         AddText(outString)
       }
+    } else if (currentCommand === "help") {
+      AddText(commandHelp)
+    } else if (currentCommand === "clear") {
+      setTerminalText([])
     } else {
       const outString = commandFailString + currentCommand
       AddText(outString)
@@ -88,7 +127,8 @@ function App() {
   return (
     <div className="mainWrapper">
       {textDivs}
-      <TextInput workingDirectory={workingDirectory} childItems={childItems} executeCommand={executeCommand}/>
+      <TextInput workingDirectory={workingDirectory} childItems={childItems} executeCommand={executeCommand} autoCommand={autoCommand}/>
+      <div className='bottomDiv'/>
     </div>
   );
 }
