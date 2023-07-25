@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import TextDiv from './TextDiv';
 import TextInput from './TextInput';
 import MultiTextDiv from './MultiTextDiv';
+import ListDiv from './ListDiv';
 
 const startingText = []
 
@@ -43,13 +44,15 @@ let listCounter = 0
 function App() {
   let terminalTextArray = startingText
 
-  const baseChildren = subDirectories["~"].concat(subFiles["~"])
+  const startChildItems = subDirectories["~"].concat(subFiles["~"])
 
   const [terminalText, setTerminalText] = useState(terminalTextArray)
   const [workingDirectory, setWorkingDirectory] = useState("~")
   const [childDirectories, setChildDirectories] = useState(subDirectories["~"])
-  const [childItems, setChildItems] = useState(baseChildren)
-  const [autoCommand, setAutoCommand] = useState("help")
+  const [childFiles, setChildFiles] = useState(subFiles["~"])
+  const [childItems, setChildItems] = useState(startChildItems)
+  const [autoCommand, setAutoCommand] = useState("ls")
+  const [showList, setShowList] = useState(false)
 
   const textDivs = terminalText.map(x => {
     if (Array.isArray(x[1])){
@@ -101,14 +104,16 @@ function App() {
     if (currentCommand === "cd"){
       if (currentArgs === ""){} else if (currentArgs === ".."){
         const newDirectory = parentDirectories[workingDirectory]
-        const newChildren = subDirectories[newDirectory].concat(subFiles[newDirectory])
-        setChildItems(newChildren)
+        const newChildItems = subDirectories[newDirectory].concat(subFiles[newDirectory])
+        setChildFiles(subFiles[newDirectory])
         setChildDirectories(subDirectories[newDirectory])
+        setChildItems(newChildItems)
         setWorkingDirectory(newDirectory)
       } else if (childDirectories.includes(currentArgs)) {
-        const newChildren = subDirectories[currentArgs].concat(subFiles[currentArgs])
-        setChildItems(newChildren)
+        const newChildItems = subDirectories[currentArgs].concat(subFiles[currentArgs])
+        setChildFiles(subFiles[currentArgs])
         setChildDirectories(subDirectories[currentArgs])
+        setChildItems(newChildItems)
         setWorkingDirectory(currentArgs)
       } else {
         const outString = cdFailString + currentArgs
@@ -117,16 +122,35 @@ function App() {
     } else if (currentCommand === "help") {
       AddText(commandHelp)
     } else if (currentCommand === "clear") {
-      setTerminalText([])
+      terminalTextArray = []
+      setTerminalText(terminalTextArray)
+    } else if (currentCommand === "autoCD") {
+      setAutoCommand("blee bloo lol")
+    } else if (currentCommand === "ls") {
+      setShowList(true)
     } else {
       const outString = commandFailString + currentCommand
       AddText(outString)
     }
   }
 
+  const handleListClick = (item,isDir) => {
+    setShowList(false)
+    const addSlash = childDirectories.map(x => "/"+x)
+    const newChildItems = addSlash.concat(childFiles)
+    AddText(newChildItems,true)
+    let commandText = "open "
+    if (isDir) {
+      commandText = "cd "
+    }
+    const newCommand = commandText + item
+    setAutoCommand(newCommand)
+  }
+
   return (
     <div className="mainWrapper">
       {textDivs}
+      {showList ? <ListDiv childDirectories={childDirectories} childFiles={childFiles} handleListClick={handleListClick}/> : <></>}
       <TextInput workingDirectory={workingDirectory} childItems={childItems} executeCommand={executeCommand} autoCommand={autoCommand}/>
       <div className='bottomDiv'/>
     </div>

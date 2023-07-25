@@ -25,7 +25,7 @@ const stringMatcher = (inputString,toMatch) => {
 
 function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
-  }
+}
 
 
 const TextInput = ({workingDirectory,childItems,executeCommand,autoCommand}) => {
@@ -145,7 +145,7 @@ const TextInput = ({workingDirectory,childItems,executeCommand,autoCommand}) => 
             event.preventDefault()
             event.stopPropagation()
         }
-
+        
         if (autoRef.current === true){
             autoRef.current = false
             runAutoCommand(autoCommand)

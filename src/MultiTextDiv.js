@@ -2,12 +2,12 @@ import styled from 'styled-components'
 
 const TerminalDiv = styled.div`
     white-space: pre-wrap;
-    min-width: 15vw;
 `
 
 const MultiContainerDiv = styled.div`
     display: flex;
     flex-wrap: wrap;
+    justify-content: space-evenly;
 `
 
 const MultiTextDiv = ({text}) => {
