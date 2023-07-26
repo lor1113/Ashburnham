@@ -1,5 +1,5 @@
 import './App.css';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import TextDiv from './TextDiv';
 import TextInput from './TextInput';
 import MultiTextDiv from './MultiTextDiv';
@@ -42,11 +42,12 @@ const commandHelp = [
 let listCounter = 0
 
 function App() {
-  let terminalTextArray = startingText
+  const terminalTextArray = useRef(startingText)
+  const listShown = useRef(false)
 
   const startChildItems = subDirectories["~"].concat(subFiles["~"])
 
-  const [terminalText, setTerminalText] = useState(terminalTextArray)
+  const [terminalText, setTerminalText] = useState(startingText)
   const [workingDirectory, setWorkingDirectory] = useState("~")
   const [childDirectories, setChildDirectories] = useState(subDirectories["~"])
   const [childFiles, setChildFiles] = useState(subFiles["~"])
@@ -74,12 +75,12 @@ function App() {
       if (listCounter > 1000000){
         listCounter = 0
       }
-      terminalTextArray.push([listCounter,newString])
-      if (terminalTextArray.length > 40) {
-        terminalTextArray = terminalTextArray.slice(-40)
+      terminalTextArray.current.push([listCounter,newString])
+      if (terminalTextArray.current.length > 40) {
+        terminalTextArray.current = terminalTextArray.current.slice(-40)
       }
     })
-    setTerminalText([...terminalTextArray])
+    setTerminalText([...terminalTextArray.current])
   }
 
   useEffect(() => {
@@ -87,6 +88,13 @@ function App() {
   },[terminalText])
   
   const executeCommand = (textCommand) => {
+    if (listShown.current) {
+      setShowList(false)
+      listShown.current = false
+      const addSlash = childDirectories.map(x => "/"+x)
+      const newChildItems = addSlash.concat(childFiles)
+      AddText(newChildItems, true)
+    }
     AddText("> " + textCommand)
     if (textCommand[0] === " "){
       return null
@@ -122,12 +130,14 @@ function App() {
     } else if (currentCommand === "help") {
       AddText(commandHelp)
     } else if (currentCommand === "clear") {
-      terminalTextArray = []
-      setTerminalText(terminalTextArray)
+      terminalTextArray.current = []
+      setTerminalText([])
     } else if (currentCommand === "autoCD") {
       setAutoCommand("blee bloo lol")
     } else if (currentCommand === "ls") {
+      setAutoCommand("")
       setShowList(true)
+      listShown.current = true
     } else {
       const outString = commandFailString + currentCommand
       AddText(outString)
@@ -136,9 +146,10 @@ function App() {
 
   const handleListClick = (item,isDir) => {
     setShowList(false)
+    listShown.current = false
     const addSlash = childDirectories.map(x => "/"+x)
     const newChildItems = addSlash.concat(childFiles)
-    AddText(newChildItems,true)
+    AddText(newChildItems, true)
     let commandText = "open "
     if (isDir) {
       commandText = "cd "
