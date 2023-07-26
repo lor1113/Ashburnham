@@ -15,8 +15,8 @@ const MultiContainerDiv = styled.div`
 `
 
 const ListDiv = ({childDirectories, childFiles, handleListClick}) => {
-    const dirTextDivs = childDirectories.map(x => <TerminalDiv onClick={() => handleListClick(x,true)}>{"/" + x}</TerminalDiv>)
-    const fileTextDivs = childFiles.map(x => <TerminalDiv onClick={() => handleListClick(x,false)}>{x}</TerminalDiv>)
+    const dirTextDivs = childDirectories.map(x => <TerminalDiv key={x} onClick={() => handleListClick(x,true)}>{"/" + x}</TerminalDiv>)
+    const fileTextDivs = childFiles.map(x => <TerminalDiv key={x} onClick={() => handleListClick(x,false)}>{x}</TerminalDiv>)
     const textDivs = dirTextDivs.concat(fileTextDivs)
     return(
         <MultiContainerDiv>{textDivs}</MultiContainerDiv>
