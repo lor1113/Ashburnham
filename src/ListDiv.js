@@ -12,6 +12,7 @@ const MultiContainerDiv = styled.div`
     display: flex;
     flex-wrap: wrap;
     justify-content: space-evenly;
+    width: 95%;
 `
 
 const ListDiv = ({childDirectories, childFiles, handleListClick}) => {

@@ -1,7 +1,7 @@
 import styled from 'styled-components'
 
 const TerminalDiv = styled.div`
-    width:90%;
+    width:95%;
     white-space: pre-wrap;
 `
 

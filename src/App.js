@@ -4,6 +4,7 @@ import TextDiv from './TextDiv';
 import TextInput from './TextInput';
 import MultiTextDiv from './MultiTextDiv';
 import ListDiv from './ListDiv';
+import testCSV from './static/resume_test.pdf'
 
 const subDirectories = {
   "~":["projects","work_experience","education"],
@@ -190,13 +191,19 @@ const executeCommand = (state, newState) => {
     const currentCommand = (commandSeparator === -1 ? textCommand.trim() : textCommand.slice(0,commandSeparator))
     const currentArgs = (commandSeparator === -1 ? "" : textCommand.slice(commandSeparator + 1).trim())
     if (currentCommand === "cd"){
-        if (currentArgs === ""){} 
+        if (currentArgs === ""){}
         else if (currentArgs === ".." || state.childDirectories.includes(currentArgs)){
             const newDirectory = (currentArgs === ".." ? parentDirectories[state.currentDir]: currentArgs)
             newState.currentDir = newDirectory
             newState.childDirectories = subDirectories[newDirectory]
             newState.childFiles = subFiles[newDirectory]
-            newState.baseText = state.username + newDirectory + " >"
+            let x = newDirectory
+            let dirPath = ""
+            while (x !== "~"){
+                dirPath = "/" + x + dirPath
+                x = parentDirectories[x]
+            }
+            newState.baseText = state.username + "~" + dirPath + " >"
         } else {
             const outString = cdFailString + currentArgs
             newState = AddText(newState,outString)
@@ -208,6 +215,8 @@ const executeCommand = (state, newState) => {
     } else if (currentCommand === "ls") {
         newState.autoCommand = ""
         newState.showList = true
+    } else if (currentCommand === "echo"){
+        newState = AddText(newState,currentArgs)
     } else {
         const outString = commandFailString + currentCommand
         newState = AddText(newState,outString)
@@ -323,10 +332,10 @@ function App() {
 
   return (
     <div className="mainWrapper">
-      {textDivs}
-      {state.showList ? <ListDiv childDirectories={state.childDirectories} childFiles={state.childFiles} handleListClick={handleListClick}/> : <></>}
-      <TextInput baseText={state.baseText} inputSlice1={state.inputSlice1} cursorText={state.cursorText} inputSlice2={state.inputSlice2}/>
-      <div className='bottomDiv'/>
+        {textDivs}
+        {state.showList ? <ListDiv childDirectories={state.childDirectories} childFiles={state.childFiles} handleListClick={handleListClick}/> : <></>}
+        <TextInput baseText={state.baseText} inputSlice1={state.inputSlice1} cursorText={state.cursorText} inputSlice2={state.inputSlice2}/>
+        <div className='bottomDiv'/>
     </div>
   );
 }
