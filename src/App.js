@@ -1,10 +1,11 @@
 import './App.css';
 import React, { useEffect, useRef, useReducer } from 'react';
-import TextDiv from './TextDiv';
+import TextDiv from './TextSpan';
 import TextInput from './TextInput';
 import MultiTextDiv from './MultiTextDiv';
 import ListDiv from './ListDiv';
-import testCSV from './static/resume_test.pdf'
+import ImageDisplay from './ImageDisplay';
+import TestImg1 from './static/testimg1.jpg'
 
 const subDirectories = {
   "~":["projects","work_experience","education"],
@@ -23,11 +24,15 @@ const parentDirectories = {
 }
 
 const subFiles = {
-  "~":["CV.txt","Biography.txt"],
+  "~":["CV.txt","Biography.txt", "test.txt"],
   "projects":[],
   "work_experience":[],
   "education": [],
   "Astrodigos":["Astro.txt"]
+}
+
+const openFiles = {
+    "test.txt":[TestImg1,"Test Image 1.txt","Alt Text for a Test Image"]
 }
 
 const commandHelp = [
@@ -52,11 +57,16 @@ const stringMatcher = (inputString,toMatch) => {
   return output
 }
 
+const inputDestroyer = (event) => {
+    event.preventDefault()
+    event.stopPropagation()
+}
+
 function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-const AddText = (newState,textInput,multi=false) => {
+const addText = (newState,textInput,multi=false) => {
     let newStringArray = []
     if (Array.isArray(textInput) && (!multi)){
         newStringArray = textInput
@@ -140,7 +150,7 @@ const textHandler = (state,newState,action,actionData) => {
                 const newCursorIndex = fullText.length + newCursorPos
                 newState.cursorText = fullText[newCursorIndex]
                 newState.inputSlice1 = fullText.slice(0,newCursorIndex)
-                newState.inputSlice1 = fullText.slice(newCursorIndex + 1)
+                newState.inputSlice2 = fullText.slice(newCursorIndex + 1)
             }
             break
         default:
@@ -161,12 +171,21 @@ const reducer = (state,dispatch) => {
         case "keyInput":
             return (textHandler(state,newState,action,actionData))
         case "execute":
+            newState.autoCommand = [""]
             return(executeCommand(state,newState))
         case "autoCommand":
-            newState.autoCommand = actionData
+            newState.autoCommand = [actionData,1,true]
             return newState
         case "autocomplete":
             return(handleAutocomplete(state,newState))
+        case "writeBuffer":
+            newState = addText(newState,newState.fullText)
+            newState.autoCommand = [""]
+            return wipeText(newState)
+        case "closeImage":
+            newState.displayImage = ""
+            newState.cursorFlash =  true
+            return newState
         default:
             console.log("default case hit for reducer")
             console.log(dispatch)
@@ -176,70 +195,92 @@ const reducer = (state,dispatch) => {
 
 const executeCommand = (state, newState) => {
     const textCommand = state.fullText
+    newState.commandHistory.unshift(textCommand)
     newState = wipeText(newState)
     if (state.showList) {
         newState.showList = false
         const addSlash = state.childDirectories.map(x => "/"+x)
         const newChildItems = addSlash.concat(state.childFiles)
-        AddText(newState,newChildItems,true)
+        addText(newState,newChildItems,true)
     }
-    newState = AddText(newState,"> " + textCommand)
+    newState = addText(newState,"> " + textCommand)
     if (textCommand[0] === " "){
         return newState
     }
     const commandSeparator = textCommand.indexOf(" ")
     const currentCommand = (commandSeparator === -1 ? textCommand.trim() : textCommand.slice(0,commandSeparator))
     const currentArgs = (commandSeparator === -1 ? "" : textCommand.slice(commandSeparator + 1).trim())
-    if (currentCommand === "cd"){
-        if (currentArgs === ""){}
-        else if (currentArgs === ".." || state.childDirectories.includes(currentArgs)){
-            const newDirectory = (currentArgs === ".." ? parentDirectories[state.currentDir]: currentArgs)
-            newState.currentDir = newDirectory
-            newState.childDirectories = subDirectories[newDirectory]
-            newState.childFiles = subFiles[newDirectory]
-            let x = newDirectory
-            let dirPath = ""
-            while (x !== "~"){
-                dirPath = "/" + x + dirPath
-                x = parentDirectories[x]
+    switch (currentCommand) {
+        case "cd":
+            if (currentArgs === ""){}
+            else if (currentArgs === ".." || state.childDirectories.includes(currentArgs)){
+                const newDirectory = (currentArgs === ".." ? parentDirectories[state.currentDir]: currentArgs)
+                newState.currentDir = newDirectory
+                newState.childDirectories = subDirectories[newDirectory]
+                newState.childFiles = subFiles[newDirectory]
+                let x = newDirectory
+                let dirPath = ""
+                while (x !== "~"){
+                    dirPath = "/" + x + dirPath
+                    x = parentDirectories[x]
+                }
+                newState.dirPath = dirPath
+                newState.baseText = state.username + "~" + dirPath + " >"
+            } else {
+                const outString = cdFailString + currentArgs
+                newState = addText(newState,outString)
             }
-            newState.baseText = state.username + "~" + dirPath + " >"
-        } else {
-            const outString = cdFailString + currentArgs
-            newState = AddText(newState,outString)
-        }
-    } else if (currentCommand === "help") {
-        newState = AddText(newState,commandHelp)
-    } else if (currentCommand === "clear") {
-        newState.terminalText = []
-    } else if (currentCommand === "ls") {
-        newState.autoCommand = ""
-        newState.showList = true
-    } else if (currentCommand === "echo"){
-        newState = AddText(newState,currentArgs)
-    } else {
-        const outString = commandFailString + currentCommand
-        newState = AddText(newState,outString)
+            break;
+        case "help":
+            newState = addText(newState,commandHelp)
+            break;
+        case "clear":
+            newState.terminalText = []
+            break;
+        case "ls":
+            newState.showList = true
+            break;
+        case "echo":
+            newState = addText(newState,currentArgs)
+            break;
+        case "open":
+            if (state.childFiles.includes(currentArgs)) {
+                newState.cursorFlash = false
+                newState.displayImage = openFiles[currentArgs]
+            } else {
+                const openFailString = "The file " + state.dirPath + currentArgs + " does not exist"
+                newState = addText(newState,openFailString)
+            }
+            break;
+        default:
+            const outString = commandFailString + currentCommand
+            newState = addText(newState,outString)
     }
     return newState
 }
 
 const initialState = () => {
   return({
-      "inputSlice1":"",
-      "inputSlice2":"",
-      "cursorPos":0,
-      "cursorText": "\u00A0",
-      "fullText": "",
-      "currentDir":"~",
-      "childDirectories": subDirectories["~"],
-      "childFiles": subFiles["~"],
-      "username": "lorenzocurcio ",
-      "baseText": "lorenzocurcio ~ >",
-      "terminalText": [],
-      "showList":false,
-      "autoCommand": "ls",
-      "listCounter":0
+        "inputSlice1":"",
+        "inputSlice2":"",
+        "cursorPos":0,
+        "cursorText": "\u00A0",
+        "fullText": "",
+        "currentDir":"~",
+        "childDirectories": subDirectories["~"],
+        "childFiles": subFiles["~"],
+        "username": "lorenzocurcio ",
+        "baseText": "lorenzocurcio ~ >",
+        "terminalText": [],
+        "showList":false,
+        "autoCommand": ["ls",1,true],
+        "listCounter":0,
+        "displayImage": "",
+        "dirPath": "~/",
+        "cursorFlash": true,
+        "commandHistory":[],
+        "commandHistoryPos":0,
+        "currentBuffer": ""
   })
 }
 
@@ -248,31 +289,44 @@ function App() {
     const autoRef = useRef(true)
 
     const handleKeyDown = (event) => {
-        let isPrintableKey = event.key.length === 1 || event.key === 'Unidentified';
+        const isPrintableKey = event.key.length === 1 || event.key === 'Unidentified';
         let dispatchEvent = {"type":"keyInput","action":0, "data":0}
         if (isPrintableKey) {
-        dispatchEvent["action"] = "addKey"
-        dispatchEvent["data"] = event.key
-        dispatch(dispatchEvent)
-        } else if (event.keyCode === 8 || event.keyCode === 46) {
-        dispatchEvent["action"] = "delete"
-        dispatch(dispatchEvent)
-        } else if (event.keyCode === 13){
-        dispatchEvent["type"] = "execute"
-        dispatch(dispatchEvent)
-        } else if (event.keyCode === 37) {
-        dispatchEvent["action"] = "cursor"
-        dispatchEvent["data"] = -1
-        dispatch(dispatchEvent)
-        } else if (event.keyCode === 39){
-        dispatchEvent["action"] = "cursor"
-        dispatchEvent["data"] = 1
-        dispatch(dispatchEvent)
-        } else if (event.keyCode === 9){
-        dispatchEvent["type"] = "autocomplete"
-        dispatch(dispatchEvent)
-        event.preventDefault()
-        }  
+            dispatchEvent["action"] = "addKey"
+            dispatchEvent["data"] = event.key
+            dispatch(dispatchEvent)
+        } else {
+            switch (event.keyCode) {
+                case 8:
+                case 46:
+                    dispatchEvent["action"] = "delete"
+                    dispatch(dispatchEvent)
+                    break;
+                case 13:
+                    dispatchEvent["type"] = "execute"
+                    dispatch(dispatchEvent)
+                    break;
+                case 37:
+                case 39:
+                    dispatchEvent["action"] = "cursor"
+                    dispatchEvent["data"] = event.keyCode - 38
+                    dispatch(dispatchEvent)
+                    break;
+                case 38:
+                case 40:
+                    dispatchEvent["action"] = "upDown"
+                    dispatchEvent["data"] = 39 - event.keyCode
+                    dispatch(dispatchEvent)
+                    break;
+                case 9:
+                    dispatchEvent["type"] = "autocomplete"
+                    dispatch(dispatchEvent)
+                    event.preventDefault()
+                    break;
+                default:
+                    break;
+            }
+        }
     }
 
     const handleListClick = (event,dir) => {
@@ -294,25 +348,24 @@ function App() {
 
   useEffect(() => {
     async function runAutoCommand(autoCommand) {
-        if (autoCommand) {
+        if (autoCommand[0]) {
             console.log("running auto command")
             document.addEventListener("keydown",inputDestroyer,true)
             dispatch({"type":"keyInput","action":"textWipe", "data":0})
-            await sleep(200)
-            for (let x = 0; x < autoCommand.length; x++) {
-                dispatch({"type":"keyInput","action":"addKey", "data":autoCommand[x]})
-                await sleep(200)
+            await sleep(200 * autoCommand[1])
+            for (let x = 0; x < autoCommand[0].length; x++) {
+                dispatch({"type":"keyInput","action":"addKey", "data":autoCommand[0][x]})
+                await sleep(200 * autoCommand[1])
             }
-            await sleep(300)
-            dispatch({"type":"execute","action":"0", "data":0})
+            await sleep(300 * autoCommand[1])
+            if (autoCommand[2]){
+                dispatch({"type":"execute","action":"0", "data":0})
+            } else {
+                dispatch({"type":"writeBuffer","action":"0", "data":0})
+            }
             document.removeEventListener("keydown",inputDestroyer,true)
         }   
         autoRef.current = true
-        }
-
-        const inputDestroyer = (event) => {
-            event.preventDefault()
-            event.stopPropagation()
         }
         
         if (autoRef.current === true){
@@ -334,8 +387,9 @@ function App() {
     <div className="mainWrapper">
         {textDivs}
         {state.showList ? <ListDiv childDirectories={state.childDirectories} childFiles={state.childFiles} handleListClick={handleListClick}/> : <></>}
-        <TextInput baseText={state.baseText} inputSlice1={state.inputSlice1} cursorText={state.cursorText} inputSlice2={state.inputSlice2}/>
+        <TextInput baseText={state.baseText} inputSlice1={state.inputSlice1} cursorText={state.cursorText} inputSlice2={state.inputSlice2} cursorFlash={state.cursorFlash}/>
         <div className='bottomDiv'/>
+        {state.displayImage ? <ImageDisplay image={state.displayImage} dispatch={dispatch}/> : <></>}
     </div>
   );
 }

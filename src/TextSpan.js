@@ -1,13 +1,13 @@
 import styled from 'styled-components'
 
-const TerminalDiv = styled.div`
+const TerminalTextSpan = styled.span`
     width:90%;
     white-space: pre-wrap;
 `
 
 const TextDiv = ({text}) => {
     return(
-        <TerminalDiv>{text}</TerminalDiv>
+        <TerminalTextSpan>{text}</TerminalTextSpan>
     )
 }
 

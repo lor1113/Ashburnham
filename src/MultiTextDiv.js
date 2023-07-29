@@ -1,6 +1,6 @@
 import styled from 'styled-components'
 
-const TerminalDiv = styled.div`
+const MultiTerminalSpan = styled.span`
     white-space: pre-wrap;
 `
 
@@ -12,7 +12,7 @@ const MultiContainerDiv = styled.div`
 `
 
 const MultiTextDiv = ({text}) => {
-    const textDivs = text.map((x,a) => <TerminalDiv key={a}>{x}</TerminalDiv>)
+    const textDivs = text.map((x,a) => <MultiTerminalSpan key={a}>{x}</MultiTerminalSpan>)
     return(
         <MultiContainerDiv>{textDivs}</MultiContainerDiv>
     )

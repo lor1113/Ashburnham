@@ -1,22 +1,12 @@
 import styled from 'styled-components'
 
-const TerminalDiv = styled.div`
+const TerminalSpan = styled.span`
     width:95%;
     white-space: pre-wrap;
 `
 
-const TerminalCursor = styled.span`
-    animation: blinker 1s step-start infinite;
-    background-color: white;
-    @keyframes blinker {
-    50% {
-        background-color: transparent;
-    };
-}
-`
-
-const TextInput = ({baseText,inputSlice1,cursorText,inputSlice2}) => {
-    return(<TerminalDiv>{baseText}{inputSlice1}<TerminalCursor>{cursorText}</TerminalCursor>{inputSlice2}</TerminalDiv>)
+const TextInput = ({baseText,inputSlice1,cursorText,inputSlice2, cursorFlash}) => {
+    return(<TerminalSpan>{baseText}{inputSlice1}<span className={(cursorFlash ? "cursorBlink":"cursorNoBlink")}>{cursorText}</span>{inputSlice2}</TerminalSpan>)
 }
 
 export default TextInput;

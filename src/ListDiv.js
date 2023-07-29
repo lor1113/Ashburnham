@@ -1,6 +1,6 @@
 import styled from 'styled-components'
 
-const TerminalDiv = styled.div`
+const MultiTerminalSpan = styled.span`
     white-space: pre-wrap;
     &:hover{
         background-color:white;
@@ -16,8 +16,8 @@ const MultiContainerDiv = styled.div`
 `
 
 const ListDiv = ({childDirectories, childFiles, handleListClick}) => {
-    const dirTextDivs = childDirectories.map(x => <TerminalDiv key={x} onClick={() => handleListClick(x,true)}>{"/" + x}</TerminalDiv>)
-    const fileTextDivs = childFiles.map(x => <TerminalDiv key={x} onClick={() => handleListClick(x,false)}>{x}</TerminalDiv>)
+    const dirTextDivs = childDirectories.map(x => <MultiTerminalSpan key={x} onClick={() => handleListClick(x,true)}>{"/" + x}</MultiTerminalSpan>)
+    const fileTextDivs = childFiles.map(x => <MultiTerminalSpan key={x} onClick={() => handleListClick(x,false)}>{x}</MultiTerminalSpan>)
     const textDivs = dirTextDivs.concat(fileTextDivs)
     return(
         <MultiContainerDiv>{textDivs}</MultiContainerDiv>
