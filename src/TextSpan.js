@@ -1,7 +1,7 @@
 import styled from 'styled-components'
 
 const TerminalTextSpan = styled.span`
-    width:90%;
+    width:95%;
     white-space: pre-wrap;
 `
 

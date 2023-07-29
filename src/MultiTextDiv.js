@@ -5,7 +5,7 @@ const MultiTerminalSpan = styled.span`
 `
 
 const MultiContainerDiv = styled.div`
-    width: 90%;
+    width: 95%;
     display: flex;
     flex-wrap: wrap;
     justify-content: space-evenly;

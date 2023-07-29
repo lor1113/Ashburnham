@@ -122,7 +122,6 @@ const handleAutocomplete = (state,newState) => {
         }
     }
 
-    newState.fullText = newState.inputSlice1 + newState.cursorText + newState.inputSlice2
     return newState
 }
 
@@ -139,25 +138,39 @@ const textHandler = (state,newState,action,actionData) => {
             break;
         case 'cursor':
         case 'cursorSet':
-            const fullText = (state.cursorPos === 0 ? state.inputSlice1 : state.inputSlice1 + state.cursorText + state.inputSlice2)
-            const newCursorPos = Math.max(Math.min((action === "cursor" ? state.cursorPos + actionData : actionData),0),-fullText.length)
+            const newCursorPos = Math.max(Math.min((action === "cursor" ? state.cursorPos + actionData : actionData),0),-state.fullText.length)
             newState.cursorPos = newCursorPos
             if (newCursorPos === 0) {
-                newState.inputSlice1 = fullText
+                newState.inputSlice1 = state.fullText
                 newState.inputSlice2 = ""
                 newState.cursorText = "\u00A0"
             } else {
-                const newCursorIndex = fullText.length + newCursorPos
-                newState.cursorText = fullText[newCursorIndex]
-                newState.inputSlice1 = fullText.slice(0,newCursorIndex)
-                newState.inputSlice2 = fullText.slice(newCursorIndex + 1)
+                const newCursorIndex = state.fullText.length + newCursorPos
+                newState.cursorText = state.fullText[newCursorIndex]
+                newState.inputSlice1 = state.fullText.slice(0,newCursorIndex)
+                newState.inputSlice2 = state.fullText.slice(newCursorIndex + 1)
             }
             break
+        case 'upDown':
+            const newCommandHistoryPos = Math.max(Math.min(state.commandHistoryPos + actionData,state.commandHistory.length-1),-1)
+            if (newCommandHistoryPos !== state.commandHistoryPos) {
+                if (state.commandHistoryPos === -1) {
+                    newState.currentBuffer = state.fullText
+                }
+                if (newCommandHistoryPos === -1) {
+                    newState.inputSlice1 = state.currentBuffer
+                } else {
+                    newState.inputSlice1 = state.commandHistory[newCommandHistoryPos]
+                }
+                newState.cursorPos = 0
+                newState.cursorText = "\u00A0"
+                newState.commandHistoryPos = newCommandHistoryPos
+            }
+            break;
         default:
             console.log("default case hit for textHandler")
             console.log(action)
     }
-    newState.fullText = newState.inputSlice1 + newState.cursorText + newState.inputSlice2
     return newState
 }
 
@@ -169,40 +182,48 @@ const reducer = (state,dispatch) => {
     const actionData = dispatch["data"]
     switch (actionType) {
         case "keyInput":
-            return (textHandler(state,newState,action,actionData))
+            newState = textHandler(state,newState,action,actionData)
+            break;
         case "execute":
             newState.autoCommand = [""]
-            return(executeCommand(state,newState))
+            newState = executeCommand(state,newState)
+            break;
         case "autoCommand":
             newState.autoCommand = [actionData,1,true]
-            return newState
+            if (state.showList) {
+                newState.showList = false
+                const newChildItems = state.childDirectories.map(x => "/"+x).concat(state.childFiles)
+                addText(newState,newChildItems,true)
+            }
+            break;
         case "autocomplete":
-            return(handleAutocomplete(state,newState))
+            newState = handleAutocomplete(state,newState)
+            break;
         case "writeBuffer":
             newState = addText(newState,newState.fullText)
             newState.autoCommand = [""]
-            return wipeText(newState)
+            newState = wipeText(newState)
+            break;
         case "closeImage":
             newState.displayImage = ""
             newState.cursorFlash =  true
-            return newState
+            break;
         default:
             console.log("default case hit for reducer")
             console.log(dispatch)
-            return state
     }
+    newState.fullText = (newState.cursorPos === 0 ? newState.inputSlice1 : newState.inputSlice1 + newState.cursorText + newState.inputSlice2)
+    return newState
 }
 
 const executeCommand = (state, newState) => {
     const textCommand = state.fullText
     newState.commandHistory.unshift(textCommand)
-    newState = wipeText(newState)
-    if (state.showList) {
-        newState.showList = false
-        const addSlash = state.childDirectories.map(x => "/"+x)
-        const newChildItems = addSlash.concat(state.childFiles)
-        addText(newState,newChildItems,true)
+    if (newState.commandHistory.length > 50){
+        newState.commandHistory = newState.commandHistory.slice(0,50)
     }
+    newState.commandHistoryPos = -1
+    newState = wipeText(newState)
     newState = addText(newState,"> " + textCommand)
     if (textCommand[0] === " "){
         return newState
@@ -279,7 +300,7 @@ const initialState = () => {
         "dirPath": "~/",
         "cursorFlash": true,
         "commandHistory":[],
-        "commandHistoryPos":0,
+        "commandHistoryPos":-1,
         "currentBuffer": ""
   })
 }
@@ -333,6 +354,7 @@ function App() {
         const newCommand = (dir ? "cd " : "open ")
         dispatch({"type":"autoCommand","action":0, "data":newCommand + event})
     }
+
     useEffect(() => {
         document.body.scrollTo(0,document.body.scrollHeight)
     },[state.terminalText,state.fullText,state.cursorPos])
